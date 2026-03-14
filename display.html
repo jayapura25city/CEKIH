@@ -26,31 +26,36 @@ display:flex;
 flex-wrap:wrap;
 justify-content:center;
 gap:15px;
+margin-bottom:30px;
 }
 
 .player{
 background:white;
-padding:15px;
-border-radius:10px;
-width:220px;
+padding:20px;
+border-radius:12px;
+width:260px;
 box-shadow:0 0 10px rgba(0,0,0,0.2);
 }
 
 .total{
-font-size:36px;
+font-size:40px;
 color:red;
+}
+
+.sticker{
+width:90px;
+margin-top:8px;
 }
 
 table{
 margin:auto;
-margin-top:30px;
 border-collapse:collapse;
 background:white;
 }
 
 td,th{
 border:1px solid #ccc;
-padding:6px;
+padding:8px;
 }
 
 </style>
@@ -63,46 +68,49 @@ padding:6px;
 
 <div id="players" class="container"></div>
 
+<button onclick="nextRound()">NEXT RONDE</button>
+
 <table>
+
 <thead>
-<tr>
-<th>Riwayat</th>
-</tr>
+<tr id="header"></tr>
 </thead>
+
 <tbody id="history"></tbody>
+
 </table>
 
 <script>
 
 const firebaseConfig={
 databaseURL:"https://bryan-9b585-default-rtdb.firebaseio.com/"
-};
+}
 
-firebase.initializeApp(firebaseConfig);
-const db=firebase.database();
+firebase.initializeApp(firebaseConfig)
 
-db.ref("players").on("value",snap=>{
+const db=firebase.database()
 
-let data=snap.val();
-renderPlayers(data);
+db.ref("game").on("value",(snap)=>{
 
-});
+let data=snap.val()
+if(!data) return
 
-db.ref("history").on("value",snap=>{
+renderPlayers(data.players)
+renderHistory(data)
 
-let data=snap.val();
-renderHistory(data);
-
-});
+})
 
 function renderPlayers(players){
 
-let div=document.getElementById("players");
-div.innerHTML="";
+let div=document.getElementById("players")
+div.innerHTML=""
 
-if(!players) return;
+players.forEach(p=>{
 
-Object.entries(players).forEach(([id,p])=>{
+let sticker=""
+
+if(p.sticker)
+sticker=`<img src="${p.sticker}" class="sticker">`
 
 div.innerHTML+=`
 
@@ -112,28 +120,71 @@ div.innerHTML+=`
 
 <div class="total">${p.score}</div>
 
+${sticker}
+
 </div>
 
-`;
+`
 
-});
+})
+
+}
+
+function renderHistory(data){
+
+let header=document.getElementById("header")
+let tbody=document.getElementById("history")
+
+header.innerHTML="<th>Ronde</th>"
+
+data.players.forEach(p=>{
+header.innerHTML+=`<th>${p.name}</th>`
+})
+
+tbody.innerHTML=""
+
+if(!data.history) return
+
+for(let i=data.history.length-1;i>=0;i--){
+
+let r=data.history[i]
+
+let row=`<tr><td>${i+1}</td>`
+
+r.forEach(v=>{
+row+=`<td>${v||""}</td>`
+})
+
+row+="</tr>"
+
+tbody.innerHTML+=row
 
 }
 
-function renderHistory(history){
-
-let tbody=document.getElementById("history");
-tbody.innerHTML="";
-
-if(!history) return;
-
-let arr=Object.values(history);
-
-for(let i=arr.length-1;i>=0;i--){
-
-tbody.innerHTML+=`<tr><td>${arr[i]}</td></tr>`;
-
 }
+
+function nextRound(){
+
+db.ref("game").once("value",(snap)=>{
+
+let data=snap.val()
+
+let players=data.players
+
+let min=Math.min(...players.map(p=>p.score))
+
+players.forEach(p=>{
+if(p.score===min){
+p.shuffle=(p.shuffle||0)+1
+if(p.shuffle>=3) p.sticker="KOCOK 1.gif"
+}
+})
+
+data.round=(data.round||0)+1
+
+db.ref("game").set(data)
+
+})
 
 }
 
