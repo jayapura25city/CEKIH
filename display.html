@@ -3,7 +3,9 @@
 <head>
 
 <meta charset="UTF-8">
-<title>Scoreboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Score Game Kartu</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -12,30 +14,44 @@
 
 body{
 font-family:Arial;
+margin:20px;
 text-align:center;
-margin-top:80px;
+background-size:cover;
+background-position:center;
+}
+
+.lightMode{background-image:url("MODE TERANG.jpg");}
+.darkMode{background-image:url("MODE GELAP.jpg");}
+
+.container{
+display:flex;
+flex-wrap:wrap;
+justify-content:center;
+gap:15px;
+margin-bottom:20px;
 }
 
 .player{
-font-size:40px;
-font-weight:bold;
+background:white;
+padding:15px;
+border-radius:10px;
+width:240px;
+box-shadow:0 0 10px rgba(0,0,0,0.3);
 }
 
-.score{
-font-size:60px;
-color:red;
+.total{
+font-size:34px;
+margin-bottom:4px;
 }
 
 </style>
-
 </head>
 
-<body>
+<body class="lightMode">
 
-<h1>SCOREBOARD</h1>
+<h2>Score Game Kartu</h2>
 
-<div id="player" class="player"></div>
-<div id="score" class="score"></div>
+<div id="players" class="container"></div>
 
 <script>
 
@@ -44,21 +60,42 @@ databaseURL:"https://bryan-9b585-default-rtdb.firebaseio.com/"
 }
 
 firebase.initializeApp(firebaseConfig)
+const db = firebase.database()
 
-let db=firebase.database()
+let players=[]
 
-db.ref("game/last").on("value",function(snapshot){
+db.ref("game/players").on("value",(snap)=>{
 
-let data=snapshot.val()
+players = snap.val()
 
-if(data){
-
-document.getElementById("player").innerText=data.player
-document.getElementById("score").innerText=data.score
-
-}
+render()
 
 })
+
+function render(){
+
+let container=document.getElementById("players")
+container.innerHTML=""
+
+if(!players) return
+
+players.forEach((p,i)=>{
+
+container.innerHTML+=`
+
+<div class="player">
+
+<div>${p.name}</div>
+
+<div class="total">${p.total}</div>
+
+</div>
+
+`
+
+})
+
+}
 
 </script>
 
