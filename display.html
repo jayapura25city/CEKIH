@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="UTF-8">
+<title>Scoreboard</title>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<style>
+
+body{
+font-family:Arial;
+text-align:center;
+margin-top:80px;
+}
+
+.player{
+font-size:40px;
+font-weight:bold;
+}
+
+.score{
+font-size:60px;
+color:red;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>SCOREBOARD</h1>
+
+<div id="player" class="player"></div>
+<div id="score" class="score"></div>
+
+<script>
+
+const firebaseConfig = {
+databaseURL:"https://bryan-9b585-default-rtdb.firebaseio.com/"
+}
+
+firebase.initializeApp(firebaseConfig)
+
+let db=firebase.database()
+
+db.ref("game/last").on("value",function(snapshot){
+
+let data=snapshot.val()
+
+if(data){
+
+document.getElementById("player").innerText=data.player
+document.getElementById("score").innerText=data.score
+
+}
+
+})
+
+</script>
+
+</body>
+</html>
