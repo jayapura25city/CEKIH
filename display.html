@@ -25,19 +25,20 @@ display:flex;
 flex-wrap:wrap;
 justify-content:center;
 gap:15px;
+margin-bottom:20px;
 }
 
 .player{
 background:white;
 padding:15px;
 border-radius:10px;
-width:220px;
+width:240px;
 box-shadow:0 0 10px rgba(0,0,0,0.3);
 }
 
 .total{
 font-size:34px;
-margin-bottom:5px;
+margin-bottom:4px;
 }
 
 .sticker{
@@ -46,14 +47,15 @@ margin-top:5px;
 }
 
 table{
+width:100%;
+max-width:900px;
 margin:auto;
-margin-top:30px;
 border-collapse:collapse;
 background:white;
 }
 
-td,th{
-border:1px solid #ccc;
+th,td{
+border:1px solid #ddd;
 padding:6px;
 }
 
@@ -68,15 +70,12 @@ padding:6px;
 <div id="players" class="container"></div>
 
 <table id="history">
-
 <thead>
 <tr id="headerRow">
 <th>Ronde</th>
 </tr>
 </thead>
-
 <tbody></tbody>
-
 </table>
 
 <script>
@@ -100,8 +99,8 @@ renderHistory(data.history)
 
 function renderPlayers(players){
 
-let div=document.getElementById("players")
-div.innerHTML=""
+let container=document.getElementById("players")
+container.innerHTML=""
 
 players.forEach(p=>{
 
@@ -110,7 +109,7 @@ let sticker=""
 if(p.sticker)
 sticker=`<img src="${p.sticker}" class="sticker">`
 
-div.innerHTML+=`
+container.innerHTML+=`
 
 <div class="player">
 
@@ -131,7 +130,6 @@ ${sticker}
 function renderHistory(history){
 
 let tbody=document.querySelector("#history tbody")
-
 tbody.innerHTML=""
 
 for(let i=history.length-1;i>=0;i--){
