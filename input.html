@@ -107,12 +107,13 @@ function addScore(i,val){
 
 db.ref("game").once("value",(snap)=>{
 
-let data=snap.val()
+let data=snap.val()||{}
 
-let players=data.players
+let players=data.players||[]
+
 let history=data.history||[]
 
-players[i].score+=val
+players[i].score += val
 
 history.push(players.map(p=>p.score))
 
@@ -131,16 +132,16 @@ db.ref("game").once("value",(snap)=>{
 
 let data=snap.val()
 
-let history=data.history
+let history=data.history||[]
 
-if(!history||history.length==0) return
+if(history.length==0) return
 
 history.pop()
 
 let last=history[history.length-1]
 
 data.players.forEach((p,i)=>{
-p.score=last?last[i]:0
+p.score= last ? last[i] : 0
 })
 
 db.ref("game").set(data)
@@ -154,6 +155,7 @@ db.ref("game/players").on("value",(snap)=>{
 let players=snap.val()
 
 let div=document.getElementById("players")
+
 div.innerHTML=""
 
 if(!players) return
@@ -168,19 +170,17 @@ div.innerHTML+=`
 
 <div>Score : ${p.score}</div>
 
-<input type="number" id="score${i}" placeholder="input poin">
+<input type="number" id="score${i}" placeholder="input poin bebas">
 
 <br>
 
-<button onclick="addScore(${i},parseInt(document.getElementById('score${i}').value))">
-
-Tambah Poin
-
+<button onclick="addScore(${i},parseInt(document.getElementById('score${i}').value)||0)">
+TAMBAH POIN
 </button>
 
 <button onclick="undo()">UNDO</button>
 
-<button onclick="removePlayer(${i})">Hapus</button>
+<button onclick="removePlayer(${i})">HAPUS</button>
 
 </div>
 
