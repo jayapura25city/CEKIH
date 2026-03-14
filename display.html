@@ -42,11 +42,6 @@ font-size:40px;
 color:red;
 }
 
-.sticker{
-width:90px;
-margin-top:8px;
-}
-
 table{
 margin:auto;
 border-collapse:collapse;
@@ -68,8 +63,6 @@ padding:8px;
 
 <div id="players" class="container"></div>
 
-<button onclick="nextRound()">NEXT RONDE</button>
-
 <table>
 
 <thead>
@@ -90,9 +83,10 @@ firebase.initializeApp(firebaseConfig)
 
 const db=firebase.database()
 
-db.ref("game").on("value",(snap)=>{
+db.ref("game").on("value",snap=>{
 
 let data=snap.val()
+
 if(!data) return
 
 renderPlayers(data.players)
@@ -103,14 +97,10 @@ renderHistory(data)
 function renderPlayers(players){
 
 let div=document.getElementById("players")
+
 div.innerHTML=""
 
 players.forEach(p=>{
-
-let sticker=""
-
-if(p.sticker)
-sticker=`<img src="${p.sticker}" class="sticker">`
 
 div.innerHTML+=`
 
@@ -119,8 +109,6 @@ div.innerHTML+=`
 <div>${p.name}</div>
 
 <div class="total">${p.score}</div>
-
-${sticker}
 
 </div>
 
@@ -152,7 +140,7 @@ let r=data.history[i]
 let row=`<tr><td>${i+1}</td>`
 
 r.forEach(v=>{
-row+=`<td>${v||""}</td>`
+row+=`<td>${v}</td>`
 })
 
 row+="</tr>"
@@ -160,31 +148,6 @@ row+="</tr>"
 tbody.innerHTML+=row
 
 }
-
-}
-
-function nextRound(){
-
-db.ref("game").once("value",(snap)=>{
-
-let data=snap.val()
-
-let players=data.players
-
-let min=Math.min(...players.map(p=>p.score))
-
-players.forEach(p=>{
-if(p.score===min){
-p.shuffle=(p.shuffle||0)+1
-if(p.shuffle>=3) p.sticker="KOCOK 1.gif"
-}
-})
-
-data.round=(data.round||0)+1
-
-db.ref("game").set(data)
-
-})
 
 }
 
