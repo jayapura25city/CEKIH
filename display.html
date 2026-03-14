@@ -66,7 +66,9 @@ padding:8px;
 <table>
 
 <thead>
-<tr id="header"></tr>
+<tr>
+<th>Riwayat</th>
+</tr>
 </thead>
 
 <tbody id="history"></tbody>
@@ -100,7 +102,9 @@ let div=document.getElementById("players")
 
 div.innerHTML=""
 
-players.forEach(p=>{
+if(!players) return
+
+Object.entries(players).forEach(([id,p])=>{
 
 div.innerHTML+=`
 
@@ -120,32 +124,23 @@ div.innerHTML+=`
 
 function renderHistory(data){
 
-let header=document.getElementById("header")
 let tbody=document.getElementById("history")
-
-header.innerHTML="<th>Ronde</th>"
-
-data.players.forEach(p=>{
-header.innerHTML+=`<th>${p.name}</th>`
-})
 
 tbody.innerHTML=""
 
 if(!data.history) return
 
-for(let i=data.history.length-1;i>=0;i--){
+let arr=Object.values(data.history)
 
-let r=data.history[i]
+for(let i=arr.length-1;i>=0;i--){
 
-let row=`<tr><td>${i+1}</td>`
+let h=arr[i]
 
-r.forEach(v=>{
-row+=`<td>${v}</td>`
-})
-
-row+="</tr>"
-
-tbody.innerHTML+=row
+tbody.innerHTML+=`
+<tr>
+<td>${h.score}</td>
+</tr>
+`
 
 }
 
