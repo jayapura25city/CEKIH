@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html>
 <head>
 
@@ -8,6 +9,7 @@
 <title>Score Game Kartu</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <style>
@@ -25,14 +27,13 @@ display:flex;
 flex-wrap:wrap;
 justify-content:center;
 gap:15px;
-margin-bottom:20px;
 }
 
 .player{
 background:white;
 padding:15px;
 border-radius:10px;
-width:240px;
+width:220px;
 box-shadow:0 0 10px rgba(0,0,0,0.3);
 }
 
@@ -41,15 +42,9 @@ font-size:36px;
 color:red;
 }
 
-.sticker{
-width:80px;
-margin-top:5px;
-}
-
 table{
-width:100%;
-max-width:900px;
 margin:auto;
+margin-top:30px;
 border-collapse:collapse;
 background:white;
 }
@@ -60,6 +55,7 @@ padding:6px;
 }
 
 </style>
+
 </head>
 
 <body>
@@ -68,53 +64,48 @@ padding:6px;
 
 <div id="players" class="container"></div>
 
-<table id="history">
+<table>
 
 <thead>
-<tr id="headerRow">
+<tr>
 <th>Ronde</th>
+<th>Score</th>
 </tr>
 </thead>
 
-<tbody></tbody>
+<tbody id="history"></tbody>
 
 </table>
 
 <script>
 
-const firebaseConfig={
-databaseURL:"https://bryan-9b585-default-rtdb.firebaseio.com/"
-}
+const firebaseConfig = {
+databaseURL: "https://bryan-9b585-default-rtdb.firebaseio.com/"
+};
 
-firebase.initializeApp(firebaseConfig)
+firebase.initializeApp(firebaseConfig);
 
-const db=firebase.database()
+const db = firebase.database();
 
-db.ref("game").on("value",(snap)=>{
+db.ref("game").on("value",snap=>{
 
-let data=snap.val()
+let data=snap.val();
 
-if(!data) return
+if(!data) return;
 
-renderPlayers(data.players)
-renderHistory(data.history)
+renderPlayers(data.players);
+renderHistory(data.history);
 
-})
+});
 
 function renderPlayers(players){
 
-let container=document.getElementById("players")
-
-container.innerHTML=""
+let div=document.getElementById("players");
+div.innerHTML="";
 
 players.forEach(p=>{
 
-let sticker=""
-
-if(p.sticker)
-sticker=`<img src="${p.sticker}" class="sticker">`
-
-container.innerHTML+=`
+div.innerHTML+=`
 
 <div class="player">
 
@@ -122,35 +113,29 @@ container.innerHTML+=`
 
 <div class="total">${p.score}</div>
 
-${sticker}
-
 </div>
 
-`
+`;
 
-})
+});
 
 }
 
 function renderHistory(history){
 
-let tbody=document.querySelector("#history tbody")
+let tbody=document.getElementById("history");
+tbody.innerHTML="";
 
-tbody.innerHTML=""
+if(!history) return;
 
 for(let i=history.length-1;i>=0;i--){
 
-let r=history[i]
-
-let row="<tr><td>"+(i+1)+"</td>"
-
-r.forEach(v=>{
-row+="<td>"+(v||"")+"</td>"
-})
-
-row+="</tr>"
-
-tbody.innerHTML+=row
+tbody.innerHTML+=`
+<tr>
+<td>${i+1}</td>
+<td>${history[i]}</td>
+</tr>
+`;
 
 }
 
