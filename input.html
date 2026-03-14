@@ -1,39 +1,31 @@
 <!DOCTYPE html>
+
 <html>
 <head>
 
 <meta charset="UTF-8">
-
 <title>Remote Score</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <style>
 
 body{
 font-family:Arial;
-margin:20px;
 text-align:center;
-}
-
-.container{
-display:flex;
-flex-wrap:wrap;
-justify-content:center;
-gap:15px;
+margin:20px;
 }
 
 .player{
-background:white;
-padding:15px;
-border-radius:10px;
-width:220px;
-box-shadow:0 0 10px rgba(0,0,0,0.2);
+border:1px solid #ddd;
+padding:10px;
+margin:10px;
 }
 
 input{
-padding:6px;
+padding:8px;
 margin:4px;
 }
 
@@ -52,113 +44,98 @@ margin:4px;
 
 <button onclick="addPlayer()">Tambah Player</button>
 
-<div id="players" class="container"></div>
+<div id="players"></div>
 
 <script>
 
-const firebaseConfig={
-databaseURL:"https://bryan-9b585-default-rtdb.firebaseio.com/"
-}
+const firebaseConfig = {
+databaseURL: "https://bryan-9b585-default-rtdb.firebaseio.com/"
+};
 
-firebase.initializeApp(firebaseConfig)
+firebase.initializeApp(firebaseConfig);
 
-const db=firebase.database()
+const db = firebase.database();
 
 function addPlayer(){
 
-db.ref("game").once("value",(snap)=>{
+db.ref("game/players").once("value",snap=>{
 
-let data=snap.val()||{}
-
-let players=data.players||[]
+let players=snap.val() || [];
 
 players.push({
 name:"Player "+(players.length+1),
 score:0
-})
+});
 
-db.ref("game/players").set(players)
+db.ref("game/players").set(players);
 
-})
-
-}
-
-function removePlayer(i){
-
-db.ref("game/players").once("value",(snap)=>{
-
-let players=snap.val()
-
-players.splice(i,1)
-
-db.ref("game/players").set(players)
-
-})
+});
 
 }
 
-function changeName(i,val){
+function changeName(i,name){
 
-db.ref("game/players/"+i+"/name").set(val)
+db.ref("game/players/"+i+"/name").set(name);
 
 }
 
 function addScore(i,val){
 
-db.ref("game").once("value",(snap)=>{
+db.ref("game").once("value",snap=>{
 
-let data=snap.val()||{}
+let data=snap.val() || {};
 
-let players=data.players||[]
+let players=data.players || [];
+let history=data.history || [];
 
-let history=data.history||[]
+players[i].score += val;
 
-players[i].score += val
-
-history.push(players.map(p=>p.score))
+history.push(val);
 
 db.ref("game").set({
 players:players,
 history:history
-})
+});
 
-})
+});
 
 }
 
 function undo(){
 
-db.ref("game").once("value",(snap)=>{
+db.ref("game").once("value",snap=>{
 
-let data=snap.val()
+let data=snap.val();
 
-let history=data.history||[]
+if(!data || !data.history) return;
 
-if(history.length==0) return
+let history=data.history;
 
-history.pop()
+if(history.length==0) return;
 
-let last=history[history.length-1]
+history.pop();
 
-data.players.forEach((p,i)=>{
-p.score= last ? last[i] : 0
-})
+data.players.forEach(p=>p.score=0);
 
-db.ref("game").set(data)
+history.forEach(v=>{
+data.players[0].score += v;
+});
 
-})
+db.ref("game").set(data);
+
+});
 
 }
 
-db.ref("game/players").on("value",(snap)=>{
+db.ref("game/players").on("value",snap=>{
 
-let players=snap.val()
+let players=snap.val();
 
-let div=document.getElementById("players")
+let div=document.getElementById("players");
 
-div.innerHTML=""
+div.innerHTML="";
 
-if(!players) return
+if(!players) return;
 
 players.forEach((p,i)=>{
 
@@ -170,25 +147,21 @@ div.innerHTML+=`
 
 <div>Score : ${p.score}</div>
 
-<input type="number" id="score${i}" placeholder="input poin bebas">
+<input id="score${i}" type="number" placeholder="input poin bebas">
 
 <br>
 
 <button onclick="addScore(${i},parseInt(document.getElementById('score${i}').value)||0)">
-TAMBAH POIN
+TAMBAH
 </button>
-
-<button onclick="undo()">UNDO</button>
-
-<button onclick="removePlayer(${i})">HAPUS</button>
 
 </div>
 
-`
+`;
 
-})
+});
 
-})
+});
 
 </script>
 
