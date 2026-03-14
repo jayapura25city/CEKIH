@@ -3,7 +3,7 @@
 <head>
 
 <meta charset="UTF-8">
-<title>Input Score</title>
+<title>Remote Score</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -13,14 +13,23 @@
 body{
 font-family:Arial;
 text-align:center;
-margin-top:30px;
+margin:20px;
+}
+
+.player{
+border:1px solid #ddd;
+padding:10px;
+margin:10px;
 }
 
 button{
-padding:12px;
-margin:6px;
-font-size:16px;
-width:200px;
+padding:10px;
+margin:5px;
+}
+
+input{
+padding:8px;
+margin:5px;
 }
 
 </style>
@@ -31,21 +40,9 @@ width:200px;
 
 <h2>REMOTE SCORE</h2>
 
-<input id="player" type="number" placeholder="Player Index">
+<button onclick="addPlayer()">Tambah Player</button>
 
-<br><br>
-
-<button onclick="addScore(250)">Masuk Joker +250</button>
-<button onclick="addScore(150)">Masuk AS +150</button>
-
-<button onclick="addScore(-250)">Kena Joker -250</button>
-<button onclick="addScore(-150)">Kena AS -150</button>
-
-<br><br>
-
-<input id="manual" type="number" placeholder="Input poin bebas">
-
-<button onclick="manual()">Tambah Poin</button>
+<div id="players"></div>
 
 <script>
 
@@ -57,30 +54,79 @@ firebase.initializeApp(firebaseConfig)
 
 const db=firebase.database()
 
-function addScore(value){
+function addPlayer(){
 
-let player=document.getElementById("player").value
+let id=db.ref("players").push().key
 
-db.ref("game/players/"+player+"/total").transaction((score)=>{
+db.ref("players/"+id).set({
+name:"Player",
+score:0,
+lastUpdate:Date.now()
+})
 
-return (score||0)+value
+}
+
+function removePlayer(id){
+
+db.ref("players/"+id).remove()
+
+}
+
+function addScore(id,val){
+
+db.ref("players/"+id).transaction(p=>{
+
+if(!p) return p
+
+p.score+=val
+p.lastUpdate=Date.now()
+
+return p
 
 })
 
 }
 
-function manual(){
+function changeName(id,val){
 
-let player=document.getElementById("player").value
-let val=parseInt(document.getElementById("manual").value)
+db.ref("players/"+id+"/name").set(val)
 
-db.ref("game/players/"+player+"/total").transaction((score)=>{
+}
 
-return (score||0)+val
+db.ref("players").on("value",(snap)=>{
+
+let data=snap.val()
+
+let div=document.getElementById("players")
+
+div.innerHTML=""
+
+if(!data) return
+
+Object.entries(data).forEach(([id,p])=>{
+
+div.innerHTML+=`
+
+<div class="player">
+
+<input value="${p.name}" onchange="changeName('${id}',this.value)">
+
+<div>Score : ${p.score}</div>
+
+<button onclick="addScore('${id}',250)">+250</button>
+<button onclick="addScore('${id}',150)">+150</button>
+<button onclick="addScore('${id}',-250)">-250</button>
+<button onclick="addScore('${id}',-150)">-150</button>
+
+<button onclick="removePlayer('${id}')">Hapus</button>
+
+</div>
+
+`
 
 })
 
-}
+})
 
 </script>
 
