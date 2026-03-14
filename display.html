@@ -16,11 +16,9 @@ body{
 font-family:Arial;
 margin:20px;
 text-align:center;
+background-image:url("MODE TERANG.jpg");
 background-size:cover;
-background-position:center;
 }
-
-.lightMode{background-image:url("MODE TERANG.jpg");}
 
 .container{
 display:flex;
@@ -33,23 +31,53 @@ gap:15px;
 background:white;
 padding:15px;
 border-radius:10px;
-width:240px;
+width:220px;
 box-shadow:0 0 10px rgba(0,0,0,0.3);
 }
 
 .total{
-font-size:36px;
-color:red;
+font-size:34px;
+margin-bottom:5px;
+}
+
+.sticker{
+width:80px;
+margin-top:5px;
+}
+
+table{
+margin:auto;
+margin-top:30px;
+border-collapse:collapse;
+background:white;
+}
+
+td,th{
+border:1px solid #ccc;
+padding:6px;
 }
 
 </style>
+
 </head>
 
-<body class="lightMode">
+<body>
 
 <h2>Score Game Kartu</h2>
 
 <div id="players" class="container"></div>
+
+<table id="history">
+
+<thead>
+<tr id="headerRow">
+<th>Ronde</th>
+</tr>
+</thead>
+
+<tbody></tbody>
+
+</table>
 
 <script>
 
@@ -58,29 +86,29 @@ databaseURL:"https://bryan-9b585-default-rtdb.firebaseio.com/"
 }
 
 firebase.initializeApp(firebaseConfig)
-
 const db=firebase.database()
 
-db.ref("players").on("value",(snap)=>{
+db.ref("game").on("value",(snap)=>{
 
 let data=snap.val()
-
 if(!data) return
 
-let arr=Object.values(data)
-
-arr.sort((a,b)=>b.lastUpdate-a.lastUpdate)
-
-render(arr)
+renderPlayers(data.players)
+renderHistory(data.history)
 
 })
 
-function render(players){
+function renderPlayers(players){
 
 let div=document.getElementById("players")
 div.innerHTML=""
 
 players.forEach(p=>{
+
+let sticker=""
+
+if(p.sticker)
+sticker=`<img src="${p.sticker}" class="sticker">`
 
 div.innerHTML+=`
 
@@ -90,11 +118,37 @@ div.innerHTML+=`
 
 <div class="total">${p.score}</div>
 
+${sticker}
+
 </div>
 
 `
 
 })
+
+}
+
+function renderHistory(history){
+
+let tbody=document.querySelector("#history tbody")
+
+tbody.innerHTML=""
+
+for(let i=history.length-1;i>=0;i--){
+
+let r=history[i]
+
+let row="<tr><td>"+(i+1)+"</td>"
+
+r.forEach(v=>{
+row+="<td>"+(v||"")+"</td>"
+})
+
+row+="</tr>"
+
+tbody.innerHTML+=row
+
+}
 
 }
 
