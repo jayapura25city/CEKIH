@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Score Game Kartu</title>
+
+<style>
+
+body{
+font-family:Arial;
+margin:20px;
+text-align:center;
+background-size:cover;
+background-position:center;
+}
+
+.lightMode{background-image:url("MODE TERANG.jpg");}
+.darkMode{background-image:url("MODE GELAP.jpg");}
+
+.modeBtn{
+position:fixed;
+top:10px;
+right:10px;
+padding:8px 12px;
+z-index:1000;
+}
+
+.controls{
+margin-bottom:15px;
+}
+
+.controls button{
+padding:8px 12px;
+margin:4px;
+cursor:pointer;
+}
+
+.container{
+display:flex;
+flex-wrap:wrap;
+justify-content:center;
+gap:15px;
+margin-bottom:20px;
+}
+
+.player{
+background:white;
+padding:15px;
+border-radius:10px;
+width:240px;
+box-shadow:0 0 10px rgba(0,0,0,0.3);
+}
+
+.bad{border:4px solid red;}
+.warn{border:4px solid #f1c40f;}
+.good{border:4px solid #27ae60;}
+
+.name{
+width:100%;
+border:none;
+font-weight:bold;
+text-align:center;
+font-size:18px;
+}
+
+.label{
+color:red;
+font-weight:bold;
+margin:4px 0;
+}
+
+.total{
+font-size:34px;
+margin-bottom:4px;
+}
+
+.shuffle{
+font-size:14px;
+margin-bottom:8px;
+}
+
+.scoreInput{
+width:100%;
+padding:8px;
+margin-bottom:8px;
+font-size:16px;
+}
+
+.bigAdd{
+background:#3498db;
+color:white;
+border:none;
+padding:12px;
+width:100%;
+font-size:16px;
+margin-bottom:6px;
+cursor:pointer;
+}
+
+.undo{
+background:#f39c12;
+color:white;
+border:none;
+padding:8px;
+width:100%;
+cursor:pointer;
+}
+
+.nextRoundBox{
+margin:20px 0;
+}
+
+.nextRoundBox button{
+font-size:22px;
+padding:14px 30px;
+background:#2980b9;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+table{
+width:100%;
+max-width:900px;
+margin:auto;
+border-collapse:collapse;
+background:white;
+}
+
+th,td{
+border:1px solid #ddd;
+padding:6px;
+text-align:center;
+}
+
+.posText{color:#27ae60;font-weight:bold;}
+.negText{color:#e74c3c;font-weight:bold;}
+
+.sticker{
+width:80px;
+margin-top:6px;
+}
+
+</style>
+</head>
+
+<body class="lightMode">
+
+<button class="modeBtn" onclick="toggleMode()">MODE</button>
+
+<h2>Score Game Kartu</h2>
+
+<div class="controls">
+<button onclick="addPlayer()">Tambah Pemain</button>
+<button onclick="removePlayer()">Hapus Pemain</button>
+<button onclick="resetGame()">Reset Game</button>
+</div>
+
+<div id="players" class="container"></div>
+
+<div class="nextRoundBox">
+<button onclick="nextRound()">NEXT RONDE</button>
+</div>
+
+<table id="history">
+<thead>
+<tr id="headerRow"><th>Ronde</th></tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<script>
+
+let players=[]
+let history=[[]]
+let round=0
+let actions=[]
+
+let shuffleCount=[]
+let shuffleStreak=[]
+let winStreak=[]
+
+let shuffleSticker=[]
+let winSticker=[]
+
+let darkMode=false
+
+for(let i=1;i<=4;i++){
+
+players.push({name:"Player "+i,total:0})
+
+shuffleCount.push(0)
+shuffleStreak.push(0)
+winStreak.push(0)
+
+shuffleSticker.push("")
+winSticker.push("")
+
+}
+
+function toggleMode(){
+
+darkMode=!darkMode
+
+if(darkMode){
+document.body.classList.remove("lightMode")
+document.body.classList.add("darkMode")
+}else{
+document.body.classList.remove("darkMode")
+document.body.classList.add("lightMode")
+}
+
+}
+
+function randomSticker(prefix,max){
+
+let r=Math.floor(Math.random()*max)+1
+return prefix+" "+r+".gif"
+
+}
+
+function renderPlayers(){
+
+let container=document.getElementById("players")
+container.innerHTML=""
+
+let gameStarted=actions.length>0
+
+let totals=players.map(p=>p.total)
+let min=Math.min(...totals)
+
+players.forEach((p,i)=>{
+
+let div=document.createElement("div")
+
+let cls=""
+let label=""
+
+if(gameStarted){
+
+let diff=p.total-min
+
+cls="good"
+
+if(p.total===min){
+cls="bad"
+label="<div class='label'>PENGOCOK HANDAL</div>"
+}
+else if(diff<200){
+cls="warn"
+}
+
+}
+
+div.className="player "+cls
+
+let stickers=""
+
+if(shuffleSticker[i])
+stickers+=`<img src="${shuffleSticker[i]}" class="sticker">`
+
+if(winSticker[i])
+stickers+=`<img src="${winSticker[i]}" class="sticker">`
+
+div.innerHTML=`
+
+<input class="name" value="${p.name}" onchange="players[${i}].name=this.value;renderHeader()">
+
+${label}
+
+<div class="total">${p.total}</div>
+
+<div class="shuffle">Mengocok : ${shuffleCount[i]}x</div>
+
+${stickers}
+
+<input type="number" inputmode="numeric"
+class="scoreInput"
+placeholder="+250 / -250 / +150 / -150"
+onkeydown="enterScore(event,${i},this)">
+
+<button class="bigAdd" onclick="manualAdd(${i},this)">TAMBAH POIN</button>
+
+<button class="undo" onclick="undoPlayer(${i})">UNDO</button>
+
+`
+
+container.appendChild(div)
+
+})
+
+}
+
+function renderHeader(){
+
+let row=document.getElementById("headerRow")
+row.innerHTML="<th>Ronde</th>"
+
+players.forEach(p=>{
+row.innerHTML+=`<th>${p.name}</th>`
+})
+
+}
+
+function renderHistory(){
+
+let tbody=document.querySelector("#history tbody")
+tbody.innerHTML=""
+
+for(let i=history.length-1;i>=0;i--){
+
+let r=history[i]
+let tr=document.createElement("tr")
+
+let html=`<td>${i+1}</td>`
+
+players.forEach((p,pi)=>{
+
+let val=r[pi]??""
+
+let cls=""
+if(val>0)cls="posText"
+if(val<0)cls="negText"
+
+html+=`<td class="${cls}">${val||""}</td>`
+
+})
+
+tr.innerHTML=html
+tbody.appendChild(tr)
+
+}
+
+}
+
+function addScore(player,value){
+
+players[player].total+=value
+
+history[round][player]=(history[round][player]||0)+value
+
+actions.push({player,value,round})
+
+if(value==250||value==150){
+
+winStreak[player]++
+
+if(winStreak[player]>=3)
+winSticker[player]=randomSticker("KETAWA",3)
+
+}else{
+
+winStreak[player]=0
+winSticker[player]=""
+
+}
+
+renderPlayers()
+renderHistory()
+
+}
+
+function manualAdd(player,input){
+
+let val=parseInt(input.previousElementSibling.value)
+
+if(!isNaN(val)){
+
+addScore(player,val)
+input.previousElementSibling.value=""
+
+}
+
+}
+
+function enterScore(e,player,input){
+
+if(e.key==="Enter"){
+
+let val=parseInt(input.value)
+
+if(!isNaN(val)){
+
+addScore(player,val)
+input.value=""
+
+}
+
+}
+
+}
+
+function undoPlayer(player){
+
+for(let i=actions.length-1;i>=0;i--){
+
+if(actions[i].player===player){
+
+let act=actions[i]
+
+players[player].total-=act.value
+history[act.round][player]-=act.value
+
+actions.splice(i,1)
+
+renderPlayers()
+renderHistory()
+
+return
+
+}
+
+}
+
+}
+
+function getShuffler(){
+
+let min=Math.min(...players.map(p=>p.total))
+
+let candidates=[]
+
+players.forEach((p,i)=>{
+if(p.total===min)candidates.push(i)
+})
+
+return candidates[0]
+
+}
+
+function nextRound(){
+
+if(actions.length>0){
+
+let shuffler=getShuffler()
+
+shuffleCount[shuffler]++
+shuffleStreak[shuffler]++
+
+if(shuffleStreak[shuffler]>=3)
+shuffleSticker[shuffler]=randomSticker("KOCOK",6)
+
+players.forEach((p,i)=>{
+if(i!==shuffler){
+shuffleStreak[i]=0
+shuffleSticker[i]=""
+}
+})
+
+}
+
+round++
+history.push([])
+
+renderPlayers()
+renderHistory()
+
+}
+
+function addPlayer(){
+
+players.push({name:"Player "+(players.length+1),total:0})
+
+shuffleCount.push(0)
+shuffleStreak.push(0)
+winStreak.push(0)
+
+shuffleSticker.push("")
+winSticker.push("")
+
+history.forEach(r=>r.push(0))
+
+renderPlayers()
+renderHeader()
+renderHistory()
+
+}
+
+function removePlayer(){
+
+if(players.length<=1)return
+
+players.pop()
+
+shuffleCount.pop()
+shuffleStreak.pop()
+winStreak.pop()
+
+shuffleSticker.pop()
+winSticker.pop()
+
+history.forEach(r=>r.pop())
+
+renderPlayers()
+renderHeader()
+renderHistory()
+
+}
+
+function resetGame(){
+
+players.forEach(p=>p.total=0)
+
+history=[[]]
+round=0
+actions=[]
+
+shuffleCount=players.map(()=>0)
+shuffleStreak=players.map(()=>0)
+winStreak=players.map(()=>0)
+
+shuffleSticker=players.map(()=> "")
+winSticker=players.map(()=> "")
+
+renderPlayers()
+renderHistory()
+
+}
+
+renderPlayers()
+renderHeader()
+renderHistory()
+
+</script>
+</body>
+</html>
