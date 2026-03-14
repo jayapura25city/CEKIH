@@ -24,12 +24,12 @@ padding:10px;
 margin:10px;
 }
 
-input{
+button{
 padding:8px;
 margin:4px;
 }
 
-button{
+input{
 padding:8px;
 margin:4px;
 }
@@ -48,86 +48,47 @@ margin:4px;
 
 <script>
 
-const firebaseConfig = {
-databaseURL: "https://bryan-9b585-default-rtdb.firebaseio.com/"
+const firebaseConfig={
+databaseURL:"https://bryan-9b585-default-rtdb.firebaseio.com/"
 };
 
 firebase.initializeApp(firebaseConfig);
-
-const db = firebase.database();
+const db=firebase.database();
 
 function addPlayer(){
 
-db.ref("game/players").once("value",snap=>{
+let ref=db.ref("players").push();
 
-let players=snap.val() || [];
-
-players.push({
-name:"Player "+(players.length+1),
+ref.set({
+name:"Player",
 score:0
 });
 
-db.ref("game/players").set(players);
+}
 
-});
+function changeName(id,name){
+
+db.ref("players/"+id+"/name").set(name);
 
 }
 
-function changeName(i,name){
+function addScore(id,val){
 
-db.ref("game/players/"+i+"/name").set(name);
-
-}
-
-function addScore(i,val){
-
-db.ref("game").once("value",snap=>{
-
-let data=snap.val() || {};
-
-let players=data.players || [];
-let history=data.history || [];
-
-players[i].score += val;
-
-history.push(val);
-
-db.ref("game").set({
-players:players,
-history:history
-});
-
-});
-
-}
-
-function undo(){
-
-db.ref("game").once("value",snap=>{
+db.ref("players/"+id).once("value",snap=>{
 
 let data=snap.val();
 
-if(!data || !data.history) return;
+let newScore=(data.score||0)+val;
 
-let history=data.history;
+db.ref("players/"+id+"/score").set(newScore);
 
-if(history.length==0) return;
-
-history.pop();
-
-data.players.forEach(p=>p.score=0);
-
-history.forEach(v=>{
-data.players[0].score += v;
-});
-
-db.ref("game").set(data);
+db.ref("history").push(val);
 
 });
 
 }
 
-db.ref("game/players").on("value",snap=>{
+db.ref("players").on("value",snap=>{
 
 let players=snap.val();
 
@@ -137,22 +98,22 @@ div.innerHTML="";
 
 if(!players) return;
 
-players.forEach((p,i)=>{
+Object.entries(players).forEach(([id,p])=>{
 
 div.innerHTML+=`
 
 <div class="player">
 
-<input value="${p.name}" onchange="changeName(${i},this.value)">
+<input value="${p.name}" onchange="changeName('${id}',this.value)">
 
 <div>Score : ${p.score}</div>
 
-<input id="score${i}" type="number" placeholder="input poin bebas">
+<input id="score${id}" type="number" placeholder="input poin">
 
 <br>
 
-<button onclick="addScore(${i},parseInt(document.getElementById('score${i}').value)||0)">
-TAMBAH
+<button onclick="addScore('${id}',parseInt(document.getElementById('score${id}').value)||0)">
+TAMBAH POIN
 </button>
 
 </div>
