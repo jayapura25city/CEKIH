@@ -21,14 +21,12 @@ background-position:center;
 }
 
 .lightMode{background-image:url("MODE TERANG.jpg");}
-.darkMode{background-image:url("MODE GELAP.jpg");}
 
 .container{
 display:flex;
 flex-wrap:wrap;
 justify-content:center;
 gap:15px;
-margin-bottom:20px;
 }
 
 .player{
@@ -40,8 +38,8 @@ box-shadow:0 0 10px rgba(0,0,0,0.3);
 }
 
 .total{
-font-size:34px;
-margin-bottom:4px;
+font-size:36px;
+color:red;
 }
 
 </style>
@@ -55,39 +53,42 @@ margin-bottom:4px;
 
 <script>
 
-const firebaseConfig = {
+const firebaseConfig={
 databaseURL:"https://bryan-9b585-default-rtdb.firebaseio.com/"
 }
 
 firebase.initializeApp(firebaseConfig)
-const db = firebase.database()
 
-let players=[]
+const db=firebase.database()
 
-db.ref("game/players").on("value",(snap)=>{
+db.ref("players").on("value",(snap)=>{
 
-players = snap.val()
+let data=snap.val()
 
-render()
+if(!data) return
+
+let arr=Object.values(data)
+
+arr.sort((a,b)=>b.lastUpdate-a.lastUpdate)
+
+render(arr)
 
 })
 
-function render(){
+function render(players){
 
-let container=document.getElementById("players")
-container.innerHTML=""
+let div=document.getElementById("players")
+div.innerHTML=""
 
-if(!players) return
+players.forEach(p=>{
 
-players.forEach((p,i)=>{
-
-container.innerHTML+=`
+div.innerHTML+=`
 
 <div class="player">
 
 <div>${p.name}</div>
 
-<div class="total">${p.total}</div>
+<div class="total">${p.score}</div>
 
 </div>
 
