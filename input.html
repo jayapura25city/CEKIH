@@ -4,13 +4,14 @@
 <head>
 
 <meta charset="UTF-8">
-<title>Remote Score</title>
+<title>REMOTE SCORE</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <style>
+
 body{
 font-family:Arial;
 margin:20px;
@@ -29,20 +30,20 @@ gap:15px;
 background:white;
 padding:15px;
 border-radius:10px;
-width:220px;
+width:230px;
 box-shadow:0 0 10px rgba(0,0,0,0.2);
 }
 
 input{
 padding:6px;
 margin:4px;
-width:120px;
 }
 
 button{
 padding:8px;
 margin:4px;
 }
+
 </style>
 
 </head>
@@ -71,14 +72,16 @@ let ref=db.ref("game/players").push()
 
 ref.set({
 name:"Player",
-score:0
+score:0,
+streak:0,
+shuffle:0
 })
 
 }
 
-function changeName(id,name){
+function changeName(id,val){
 
-db.ref("game/players/"+id+"/name").set(name)
+db.ref("game/players/"+id+"/name").set(val)
 
 }
 
@@ -88,53 +91,80 @@ let val=parseInt(document.getElementById("score"+id).value)
 
 if(isNaN(val)) return
 
-db.ref("game/players/"+id).once("value",snap=>{
+db.ref("game").once("value",(snap)=>{
 
 let data=snap.val()
 
-let newScore=(data.score||0)+val
+let players=data.players || {}
+let history=data.history || []
 
-db.ref("game/players/"+id+"/score").set(newScore)
+players[id].score+=val
 
-db.ref("game/history").push({
-player:id,
-score:val
+if(val>0){
+
+players[id].streak=(players[id].streak||0)+1
+
+if(players[id].streak>=3)
+players[id].sticker="KETAWA 1.gif"
+
+}else{
+
+players[id].streak=0
+players[id].sticker=""
+
+}
+
+let row=[]
+
+Object.values(players).forEach(p=>{
+row.push(p.score)
+})
+
+history.push(row)
+
+db.ref("game").update({
+players:players,
+history:history
 })
 
 })
 
 }
 
-function undo(){
+function undoPlayer(){
 
-db.ref("game/history").limitToLast(1).once("value",snap=>{
+db.ref("game").once("value",(snap)=>{
 
-let last
+let data=snap.val()
 
-snap.forEach(child=>{
-last={id:child.key,data:child.val()}
+let history=data.history || []
+
+if(history.length==0) return
+
+history.pop()
+
+let last=history[history.length-1]
+
+let i=0
+
+Object.keys(data.players).forEach(id=>{
+
+data.players[id].score=last?last[i]:0
+
+i++
+
 })
 
-if(!last) return
-
-let player=last.data.player
-let score=last.data.score
-
-db.ref("game/players/"+player+"/score").once("value",s=>{
-
-let newScore=(s.val()||0)-score
-
-db.ref("game/players/"+player+"/score").set(newScore)
-
+db.ref("game").update({
+players:data.players,
+history:history
 })
-
-db.ref("game/history/"+last.id).remove()
 
 })
 
 }
 
-db.ref("game/players").on("value",snap=>{
+db.ref("game/players").on("value",(snap)=>{
 
 let players=snap.val()
 
@@ -158,13 +188,9 @@ div.innerHTML+=`
 
 <br>
 
-<button onclick="addScore('${id}')">
-Tambah
-</button>
+<button onclick="addScore('${id}')">Tambah</button>
 
-<button onclick="undo()">
-Undo
-</button>
+<button onclick="undoPlayer()">UNDO</button>
 
 </div>
 
