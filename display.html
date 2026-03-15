@@ -4,7 +4,6 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Score Game Kartu</title>
 
@@ -18,7 +17,7 @@ body{
 font-family:Arial;
 margin:20px;
 text-align:center;
-background:#f4f4f4;
+background:#e9e9e9;
 }
 
 .container{
@@ -34,12 +33,17 @@ background:white;
 padding:20px;
 border-radius:12px;
 width:260px;
-box-shadow:0 0 10px rgba(0,0,0,0.2);
+box-shadow:0 0 10px rgba(0,0,0,0.3);
 }
 
 .total{
 font-size:40px;
 color:red;
+}
+
+.sticker{
+width:90px;
+margin-top:5px;
 }
 
 table{
@@ -63,12 +67,12 @@ padding:8px;
 
 <div id="players" class="container"></div>
 
+<button onclick="nextRound()">NEXT RONDE</button>
+
 <table>
 
 <thead>
-<tr>
-<th>Riwayat</th>
-</tr>
+<tr id="header"></tr>
 </thead>
 
 <tbody id="history"></tbody>
@@ -85,7 +89,7 @@ firebase.initializeApp(firebaseConfig)
 
 const db=firebase.database()
 
-db.ref("game").on("value",snap=>{
+db.ref("game").on("value",(snap)=>{
 
 let data=snap.val()
 
@@ -102,9 +106,12 @@ let div=document.getElementById("players")
 
 div.innerHTML=""
 
-if(!players) return
+Object.values(players).forEach(p=>{
 
-Object.entries(players).forEach(([id,p])=>{
+let sticker=""
+
+if(p.sticker)
+sticker=`<img src="${p.sticker}" class="sticker">`
 
 div.innerHTML+=`
 
@@ -113,6 +120,8 @@ div.innerHTML+=`
 <div>${p.name}</div>
 
 <div class="total">${p.score}</div>
+
+${sticker}
 
 </div>
 
@@ -124,25 +133,63 @@ div.innerHTML+=`
 
 function renderHistory(data){
 
+let header=document.getElementById("header")
 let tbody=document.getElementById("history")
+
+header.innerHTML="<th>Ronde</th>"
+
+Object.values(data.players).forEach(p=>{
+header.innerHTML+=`<th>${p.name}</th>`
+})
 
 tbody.innerHTML=""
 
 if(!data.history) return
 
-let arr=Object.values(data.history)
+for(let i=data.history.length-1;i>=0;i--){
 
-for(let i=arr.length-1;i>=0;i--){
+let r=data.history[i]
 
-let h=arr[i]
+let row=`<tr><td>${i+1}</td>`
 
-tbody.innerHTML+=`
-<tr>
-<td>${h.score}</td>
-</tr>
-`
+r.forEach(v=>{
+row+=`<td>${v}</td>`
+})
+
+row+="</tr>"
+
+tbody.innerHTML+=row
 
 }
+
+}
+
+function nextRound(){
+
+db.ref("game").once("value",(snap)=>{
+
+let data=snap.val()
+
+let players=data.players
+
+let min=Math.min(...Object.values(players).map(p=>p.score))
+
+Object.values(players).forEach(p=>{
+
+if(p.score===min){
+
+p.shuffle=(p.shuffle||0)+1
+
+if(p.shuffle>=3)
+p.sticker="KOCOK 1.gif"
+
+}
+
+})
+
+db.ref("game/players").set(players)
+
+})
 
 }
 
